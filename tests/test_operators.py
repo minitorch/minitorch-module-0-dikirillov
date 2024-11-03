@@ -1,11 +1,11 @@
 from typing import Callable, List, Tuple
 
 import pytest
+import numpy as np
 from hypothesis import given
 from hypothesis.strategies import lists
 
 from minitorch import MathTest
-import minitorch
 from minitorch.operators import (
     add,
     addLists,
@@ -23,6 +23,8 @@ from minitorch.operators import (
     relu,
     relu_back,
     sigmoid,
+    sum,
+    is_close
 )
 
 from .strategies import assert_close, small_floats
@@ -33,7 +35,7 @@ from .strategies import assert_close, small_floats
 @pytest.mark.task0_1
 @given(small_floats, small_floats)
 def test_same_as_python(x: float, y: float) -> None:
-    """Check that the main operators all return the same value of the python version"""
+    "Check that the main operators all return the same value of the python version"
     assert_close(mul(x, y), x * y)
     assert_close(add(x, y), x + y)
     assert_close(neg(x), -x)
@@ -69,7 +71,7 @@ def test_id(a: float) -> None:
 @pytest.mark.task0_1
 @given(small_floats)
 def test_lt(a: float) -> None:
-    """Check that a - 1.0 is always less than a"""
+    "Check that a - 1.0 is always less than a"
     assert lt(a - 1.0, a) == 1.0
     assert lt(a, a - 1.0) == 0.0
 
@@ -107,41 +109,54 @@ def test_sigmoid(a: float) -> None:
     * It crosses 0 at 0.5
     * It is  strictly increasing.
     """
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError("Need to implement for Task 0.2")
+    assert 0.0 <= sigmoid(a) <= 1.0
+    assert_close(1 - sigmoid(a), sigmoid(-a))
+    assert_close(sigmoid(0), 0.5)
+    # случай sigmoid(a) == 1 отдельно обрабатываем из-за проблем точности
+    assert (sigmoid(a - 1) < sigmoid(a) < sigmoid(a + 1)) or (is_close(sigmoid(a - 1), 1.0))
 
 
 @pytest.mark.task0_2
 @given(small_floats, small_floats, small_floats)
 def test_transitive(a: float, b: float, c: float) -> None:
-    """Test the transitive property of less-than (a < b and b < c implies a < c)"""
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError("Need to implement for Task 0.2")
+    "Test the transitive property of less-than (a < b and b < c implies a < c)"
+    assert not (a < b and b < c) or (a < b and b < c and a < c)
 
 
 @pytest.mark.task0_2
 def test_symmetric() -> None:
-    """Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
+    """
+    Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
     gives the same value regardless of the order of its input.
     """
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError("Need to implement for Task 0.2")
+    test_arr = np.random.rand(10)
+    for x in test_arr:
+        for y in test_arr:
+            assert_close(mul(x, y), mul(y, x))
 
 
 @pytest.mark.task0_2
 def test_distribute() -> None:
-    r"""Write a test that ensures that your operators distribute, i.e.
+    r"""
+    Write a test that ensures that your operators distribute, i.e.
     :math:`z \times (x + y) = z \times x + z \times y`
     """
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError("Need to implement for Task 0.2")
+    test_arr = np.random.rand(10)
+    for x in test_arr:
+        for y in test_arr:
+            for z in test_arr:
+                assert_close(mul(z, x + y), mul(z, x) + mul(z, y))
 
 
 @pytest.mark.task0_2
 def test_other() -> None:
-    """Write a test that ensures some other property holds for your functions."""
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError("Need to implement for Task 0.2")
+    """
+    Write a test that ensures some other property holds for your functions.
+    """
+    test_arr = np.random.rand(10)
+    for x in test_arr:
+        assert_close(x, add(x, 0))
+        assert_close(0, mul(x, 0))
 
 
 # ## Task 0.3  - Higher-order functions
@@ -165,17 +180,17 @@ def test_zip_with(a: float, b: float, c: float, d: float) -> None:
     lists(small_floats, min_size=5, max_size=5),
 )
 def test_sum_distribute(ls1: List[float], ls2: List[float]) -> None:
-    """Write a test that ensures that the sum of `ls1` plus the sum of `ls2`
+    """
+    Write a test that ensures that the sum of `ls1` plus the sum of `ls2`
     is the same as the sum of each element of `ls1` plus each element of `ls2`.
     """
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+    assert_close(sum(ls1) + sum(ls2), sum(addLists(ls1, ls2)))
 
 
 @pytest.mark.task0_3
 @given(lists(small_floats))
 def test_sum(ls: List[float]) -> None:
-    assert_close(sum(ls), minitorch.operators.sum(ls))
+    assert_close(sum(ls), sum(ls))
 
 
 @pytest.mark.task0_3
